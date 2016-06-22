@@ -1,6 +1,10 @@
 package learner
 
-class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Seq[String] = Seq(""), sufStrings: Seq[String] = Seq("")) {
+case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String] = Seq(""), ss: Seq[String] = Seq("")) {
+  val preStrings = ps.distinct
+  val sufStrings = ss.distinct
+  val letters = l.distinct
+
   assert(isPrefixClosed(preStrings), s"${preStrings} is not prefix closed")
   assert(isSuffixClosed(sufStrings), s"${sufStrings} is not suffix closed")
 
@@ -12,7 +16,7 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
   }
 
   val sa: Seq[String] = for(a <- letters; s <- preStrings) yield (s + a)
-  
+
   def generateTable: String = {
     val buf = new StringBuilder
     val maxSa = sa.map(_.length).max
@@ -40,7 +44,7 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
     buf.toString
   }
 
-  def isPrefixClosed(lst: Seq[String]): Boolean = {
+  def isSuffixClosed(lst: Seq[String]): Boolean = {
     def helper(str: String, set: Set[String]): Boolean = str match {
       case "" => set contains ""
       case _ => {
@@ -51,7 +55,7 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
     lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
   }
 
-  def isSuffixClosed(lst: Seq[String]): Boolean = {
+  def isPrefixClosed(lst: Seq[String]): Boolean = {
     def helper(str: String, set: Set[String]): Boolean = str match {
       case "" => set contains ""
       case _ => {
@@ -63,7 +67,7 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
   }
 
   def rowOf(str: String): Seq[Boolean] = sufStrings.map{e: String => str + e}.map(isMember)  
-  def isClosed: Boolean = { 
+  lazy val isClosed: Boolean = { 
     (findUnclosed == None)
   }
 
@@ -81,7 +85,7 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
   }
 
   def isConsistent: Boolean = {
-  (findInconsistent == None)
+    (findInconsistent == None)
   } 
 
   def findInconsistent: Option[String] = {
@@ -89,8 +93,6 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
       for(s1 <- preStrings; s2 <- preStrings; a <- letters; e <- sufStrings;
          if (s1 != s2 && rowOf(s1) == rowOf(s2) && isMember(s1 + a + e) != isMember(s2+a+e)))
            yield (a+e)
-    //p.foreach{case (s1,s2,_,_) => println(s"$s1 : ${rowOf(s1)} & $s2 : ${rowOf(s2)}")}
-    //p.foreach{case (s1,s2,a,e) =>println( s"$s1+$a+$e & $s2+$a+$e : ${isMember(s1 + a + e)} & ${isMember(s2+a+e)}")}
     if(p.length > 0) Some(p.head) else None
   }
 
@@ -100,7 +102,8 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
     type RowStateMap = Map[Seq[Boolean], State]
 
     def generateStates: RowStateMap = {
-      preStrings.distinct.zipWithIndex.map{case (s,i) => rowOf(s) -> State("q"+i)}(collection.breakOut)
+      val pd = preStrings.map{s => rowOf(s)}.distinct.zipWithIndex
+      pd.map{case (s,i) => s -> State("q"+i)}(collection.breakOut)
     }
     def genTFun(map: RowStateMap): (State,String) => State = {
       val stateLetterList = for(s <- preStrings; a <- letters) yield (s,a)
@@ -127,21 +130,21 @@ class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Se
     val tFun = genTFun(stateMap)
     new Hypothesis(letters, states, iState, fStates, tFun)
   }
-  
 
+  override def toString() = generateTable
 }
 
 object Observation {
-  def main(args: Array[String]) = {
-    def f(s: String) = s matches """ab*"""
-    def l = Seq("a","b")
-    def ps = Seq("","a")
-    def ss = Seq("")
-
-    val obs = new ObsTable(l,f,ps,ss)
-    println(obs.generateTable)
-    println(s"Inconsistent: ${obs.findInconsistent}")
-    println(s"Unclosed: ${obs.findUnclosed}")
-    println(obs.generateHypothesis.generateTable)
-  }
+//  def main(args: Array[String]) = {
+//    def f(s: String) = s matches """ab*"""
+//    def l = Seq("a","b")
+//    def ps = Seq("","a","b","ba")
+//    def ss = Seq("","a")
+//
+//    val obs = new ObsTable(l,f,ps,ss)
+//    println(obs.generateTable)
+//    println(s"Inconsistent: ${obs.findInconsistent}")
+//    println(s"Unclosed: ${obs.findUnclosed}")
+//    println(obs.generateHypothesis.generateTable)
+//  }
 }
