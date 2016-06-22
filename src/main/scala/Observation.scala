@@ -1,6 +1,40 @@
 class ObsTable(letters: Seq[String], preStrings: Seq[String], sufStrings: Seq[String], isMember: String => Boolean) {
+  
+  implicit class Printer(s: String) {
+    def pString = s match {
+      case "" => "λ"
+      case _ => s
+    }
+  }
 
-  val sa: Seq[String] = for(a <- letters; s <- preStrings; if !( preStrings contains (s + a))) yield (s + a)
+  val sa: Seq[String] = for(a <- letters; s <- preStrings) yield (s + a)
+  
+  def generateTable: String = {
+    val buf = new StringBuilder
+    val maxSa = sa.map(_.length).max
+    val sufStr = sufStrings.map(_.pString).mkString(" | ")
+    val div = "-" * (1 + maxSa + 3 + sufStr.length) + '\n'
+
+    buf ++= "T" + " " * (maxSa - 1)+ " | "
+    buf ++= sufStr
+    buf += '\n'
+
+    buf++= div
+    for(s <- preStrings.sortWith(_.length < _.length)) {
+      buf ++= s"${s.pString}" + " " * (maxSa - s.pString.length) + " | "
+      buf ++= rowOf(s).map{x:Boolean => if(x) "1" else "0"}.map(_.pString).mkString(" | ")
+      buf += '\n'
+    }
+
+    buf++= div
+    for(s <- (sa diff preStrings).sortWith(_.length < _.length)) {
+      buf ++= s"${s.pString}" + " "* (maxSa - s.pString.length) + " | "
+      buf ++= rowOf(s).map{x:Boolean => if(x) "1" else "0"}.map(_.pString).mkString(" | ")
+      buf += '\n'
+    }
+
+    buf.toString
+  }
 
   def isPrefixClosed(lst: Seq[String]): Boolean = {
     def helper(str: String, set: Set[String]): Boolean = str match {
@@ -80,9 +114,10 @@ object Observation {
   def main(args: Array[String]) = {
     def f(s: String) = s matches """ab*"""
     def l = Seq("a","b")
-    def ps = Seq("","a","ba","b")
-    def ss = Seq("")
+    def ps = Seq("","a","b","ba")
+    def ss = Seq("","a")
     val obs = new ObsTable(l,ps,ss,f)
+    println(obs.generateTable)
     println(s"Inconsistent: ${obs.findInconsistent}")
     println(s"Unclosed: ${obs.findUnclosed}")
   }
