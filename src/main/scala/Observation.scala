@@ -1,5 +1,9 @@
-class ObsTable(letters: Seq[String], preStrings: Seq[String], sufStrings: Seq[String], isMember: String => Boolean) {
-  
+package learner
+
+class ObsTable(letters: Seq[String], isMember: String => Boolean, preStrings: Seq[String] = Seq(""), sufStrings: Seq[String] = Seq("")) {
+  assert(isPrefixClosed(preStrings), s"${preStrings} is not prefix closed")
+  assert(isSuffixClosed(sufStrings), s"${sufStrings} is not suffix closed")
+
   implicit class Printer(s: String) {
     def pString = s match {
       case "" => "λ"
@@ -57,24 +61,10 @@ class ObsTable(letters: Seq[String], preStrings: Seq[String], sufStrings: Seq[St
     }
     lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
   }
-  assert(isPrefixClosed(preStrings), s"${preStrings} is not prefix closed")
-  assert(isSuffixClosed(sufStrings), s"${sufStrings} is not suffix closed")
 
   def rowOf(str: String): Seq[Boolean] = sufStrings.map{e: String => str + e}.map(isMember)  
   def isClosed: Boolean = { 
-  //  //println(sa.map(isMember))
-  //  def hasSomeSameRow(sa: String, lst: Seq[String]): Boolean = lst match {
-  //    case hd::tl => { //print(s"$hd: ${rowOf(hd)}   "); println(s"$sa: ${rowOf(sa)}");  
-  //      if(rowOf(hd) == rowOf(sa)) true 
-  //      else hasSomeSameRow(sa,tl) 
-  //    }
-  //    case _ => false
-  //  }
-
-  //  (for(sa1 <- sa)
-  //    yield hasSomeSameRow(sa1,preStrings)
-  //  ).foldLeft(true)(_ && _)
-  (findUnclosed == None)
+    (findUnclosed == None)
   }
 
   def findUnclosed: Option[String] = {
@@ -91,11 +81,6 @@ class ObsTable(letters: Seq[String], preStrings: Seq[String], sufStrings: Seq[St
   }
 
   def isConsistent: Boolean = {
-  //  (for(s1 <- preStrings; s2 <- preStrings; if(s1 != s2 && rowOf(s1) == rowOf(s2)))
-  //      yield 
-  //      ((for(a <- letters) 
-  //            yield ( rowOf(s1 + a) == rowOf(s2 + a))).foldLeft(true)(_ && _))
-  //  ).foldLeft(true)(_ && _)
   (findInconsistent == None)
   } 
 
@@ -108,17 +93,55 @@ class ObsTable(letters: Seq[String], preStrings: Seq[String], sufStrings: Seq[St
     //p.foreach{case (s1,s2,a,e) =>println( s"$s1+$a+$e & $s2+$a+$e : ${isMember(s1 + a + e)} & ${isMember(s2+a+e)}")}
     if(p.length > 0) Some(p.head) else None
   }
+
+  def generateHypothesis: Hypothesis = {
+    assert(this.isClosed,"Cannot generate hypothesis with unclosed table")
+    assert(this.isConsistent, "Cannot generate hypothesis with inconsistent table")
+    type RowStateMap = Map[Seq[Boolean], State]
+
+    def generateStates: RowStateMap = {
+      preStrings.distinct.zipWithIndex.map{case (s,i) => rowOf(s) -> State("q"+i)}(collection.breakOut)
+    }
+    def genTFun(map: RowStateMap): (State,String) => State = {
+      val stateLetterList = for(s <- preStrings; a <- letters) yield (s,a)
+      val m: Map[(State,String),State] = stateLetterList.map{case (s,a) => (map(rowOf(s)),a) -> map(rowOf(s + a))}(collection.breakOut)
+      def f(st: State, str: String) = m((st,str))
+      f
+    }
+    def getFStates(map: RowStateMap): Seq[State] = {
+      def iter(lst: Seq[String], set: Set[State] = Set()): Set[State] = lst match {
+        case str::tl => 
+          if(isMember(str)) 
+            iter(tl,set + map(rowOf(str)))
+          else
+            iter(tl,set)
+        case _ => set
+      }
+      iter(preStrings).toSeq
+    }
+    
+    val stateMap = generateStates
+    val states = stateMap.values.toSeq
+    val iState = stateMap(rowOf(""))
+    val fStates = getFStates(stateMap)
+    val tFun = genTFun(stateMap)
+    new Hypothesis(letters, states, iState, fStates, tFun)
+  }
+  
+
 }
 
 object Observation {
   def main(args: Array[String]) = {
     def f(s: String) = s matches """ab*"""
     def l = Seq("a","b")
-    def ps = Seq("","a","b","ba")
-    def ss = Seq("","a")
-    val obs = new ObsTable(l,ps,ss,f)
+    def ps = Seq("","a")
+    def ss = Seq("")
+
+    val obs = new ObsTable(l,f,ps,ss)
     println(obs.generateTable)
     println(s"Inconsistent: ${obs.findInconsistent}")
     println(s"Unclosed: ${obs.findUnclosed}")
+    println(obs.generateHypothesis.generateTable)
   }
 }
