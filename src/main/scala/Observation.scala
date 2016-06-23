@@ -1,12 +1,34 @@
 package learner
 
 case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String] = Seq(""), ss: Seq[String] = Seq("")) {
-  val preStrings = ps.distinct
-  val sufStrings = ss.distinct
-  val letters = l.distinct
+  val preStrings = ps.distinct.toList
+  val sufStrings = ss.distinct.toList
+  val letters = l.distinct.toList
 
   assert(isPrefixClosed(preStrings), s"${preStrings} is not prefix closed")
   assert(isSuffixClosed(sufStrings), s"${sufStrings} is not suffix closed")
+  
+  def isSuffixClosed(lst: List[String]): Boolean = {
+    def helper(str: String, set: Set[String]): Boolean = str match {
+      case "" => set contains ""
+      case _ => {
+        val p = str.tail
+        (set contains p) && helper(p,set)
+      }
+    }
+    lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
+  }
+
+  def isPrefixClosed(lst: List[String]): Boolean = {
+    def helper(str: String, set: Set[String]): Boolean = str match {
+      case "" => set contains ""
+      case _ => {
+        val p = str.dropRight(1)
+        (set contains p) && helper(p,set)
+      }
+    }
+    lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
+  }
 
   implicit class Printer(s: String) {
     def pString = s match {
@@ -15,9 +37,9 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
     }
   }
 
-  val sa: Seq[String] = for(a <- letters; s <- preStrings) yield (s + a)
+  val sa: List[String] = for(a <- letters; s <- preStrings) yield (s + a)
 
-  def generateTable: String = {
+  private def generateTable: String = {
     val buf = new StringBuilder
     val maxSa = sa.map(_.length).max
     val sufStr = sufStrings.map(_.pString).mkString(" | ")
@@ -44,35 +66,14 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
     buf.toString
   }
 
-  def isSuffixClosed(lst: Seq[String]): Boolean = {
-    def helper(str: String, set: Set[String]): Boolean = str match {
-      case "" => set contains ""
-      case _ => {
-        val p = str.tail
-        (set contains p) && helper(p,set)
-      }
-    }
-    lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
-  }
 
-  def isPrefixClosed(lst: Seq[String]): Boolean = {
-    def helper(str: String, set: Set[String]): Boolean = str match {
-      case "" => set contains ""
-      case _ => {
-        val p = str.dropRight(1)
-        (set contains p) && helper(p,set)
-      }
-    }
-    lst.map(helper(_,lst.toSet)).foldLeft(true)(_ && _)
-  }
-
-  def rowOf(str: String): Seq[Boolean] = sufStrings.map{e: String => str + e}.map(isMember)  
-  lazy val isClosed: Boolean = { 
+  def rowOf(str: String): List[Boolean] = sufStrings.map{e: String => str + e}.map(isMember)  
+  def isClosed: Boolean = { 
     (findUnclosed == None)
   }
 
   def findUnclosed: Option[String] = {
-    def iter(lst: Seq[String]): Option[String] = lst match {
+    def iter(lst: List[String]): Option[String] = lst match {
       case hd::tl => {
         if( (for(s <- preStrings) yield (rowOf(s) != rowOf(hd))).foldLeft(true)(_ && _))
           Some(hd)
@@ -112,14 +113,16 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
       f
     }
     def getFStates(map: RowStateMap): Seq[State] = {
-      def iter(lst: Seq[String], set: Set[State] = Set()): Set[State] = lst match {
-        case str::tl => 
+      def iter(lst: List[String], set: Set[State] = Set()): Set[State] = lst match {
+        case str::tl => {
           if(isMember(str)) 
             iter(tl,set + map(rowOf(str)))
           else
             iter(tl,set)
+        }
         case _ => set
       }
+      println(s"preStrings: $preStrings")
       iter(preStrings).toSeq
     }
     
@@ -127,6 +130,9 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
     val states = stateMap.values.toSeq
     val iState = stateMap(rowOf(""))
     val fStates = getFStates(stateMap)
+    
+    assert(!fStates.isEmpty, "The set of final states is empty!")
+
     val tFun = genTFun(stateMap)
     new Hypothesis(letters, states, iState, fStates, tFun)
   }
@@ -135,16 +141,16 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
 }
 
 object Observation {
-//  def main(args: Array[String]) = {
-//    def f(s: String) = s matches """ab*"""
-//    def l = Seq("a","b")
-//    def ps = Seq("","a","b","ba")
-//    def ss = Seq("","a")
-//
-//    val obs = new ObsTable(l,f,ps,ss)
-//    println(obs.generateTable)
-//    println(s"Inconsistent: ${obs.findInconsistent}")
-//    println(s"Unclosed: ${obs.findUnclosed}")
-//    println(obs.generateHypothesis.generateTable)
-//  }
+ // def main(args: Array[String]) = {
+ //   def f(s: String) = s matches """ab*"""
+ //   def l = Seq("a","b")
+ //   def ps = Seq("","a","b","ba")
+ //   def ss = Seq("","a")
+
+ //   val obs = new ObsTable(l,f,ps,ss)
+ //   println(obs)
+ //   println(s"Inconsistent: ${obs.findInconsistent}")
+ //   println(s"Unclosed: ${obs.findUnclosed}")
+ //   println(obs.generateHypothesis)
+ // }
 }

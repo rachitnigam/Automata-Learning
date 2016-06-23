@@ -20,14 +20,14 @@ class Learner(teacher: Teacher) {
     else if(obs.isClosed == false) {
       println(s"This table is not closed...\n$obs\n")
       val u: String = obs.findUnclosed.get
-      val preStrings: Seq[String] = obs.preStrings :+ u
+      val preStrings: List[String] = obs.preStrings :+ u
       val newObs = makeObsTable(preStrings, obs.sufStrings)
       generateHypo(newObs)
     }
     else if(obs.isConsistent == false) {
       println(s"This table is not inconsistent...\n$obs\n")
       val i: String = obs.findInconsistent.get
-      val ss: Seq[String] = obs.sufStrings :+ i
+      val ss: List[String] = obs.sufStrings :+ i
       val newObs = makeObsTable(obs.preStrings, ss)
       generateHypo(newObs)
     }
@@ -41,9 +41,9 @@ class Learner(teacher: Teacher) {
       val counter = teacher.isTrueHypothesis(h)
       if(counter.isDefined){
         println(s"This is not the correct, ${counter.get} is the counterexample")
-        println(s"The old ps: ${nobs.preStrings}")
-        val ps: Seq[String] = (nobs.preStrings.toSet union allPreOf(counter.get).toSet).toSeq
-        println(s"The new ps: $ps")
+        //println(s"The old ps: ${nobs.preStrings}")
+        val ps: List[String] = (nobs.preStrings union allPreOf(counter.get)).toList
+        //println(s"The new ps: $ps")
         loop(makeObsTable(ps,nobs.sufStrings))
       }
       else{
