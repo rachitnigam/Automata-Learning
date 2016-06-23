@@ -1,6 +1,6 @@
 package learner
 
-case class ExampleTeacher(l: Seq[String]) extends Teacher(l) {
+case class ExampleTeacher() extends Teacher(Seq("1","0")) {
   def isMember(str: String): Boolean = {
     val lst = str.toList
     (lst.count(_ == '1') % 2 == 0) && (lst.count(_ == '0') % 2 == 0)
@@ -13,8 +13,8 @@ case class ExampleTeacher(l: Seq[String]) extends Teacher(l) {
   }
 }
 
-case class RegexTeacher(l: Seq[String]) extends Teacher(l) {
-  def isMember(str: String): Boolean = str matches """ab*""" 
+case class RegexTeacher(reg: String) extends Teacher(Seq("a","b")) {
+  def isMember(str: String): Boolean = str matches reg
 
   def isTrueHypothesis(h: Hypothesis): Option[String] = {
     val c: String = scala.io.StdIn.readLine
@@ -26,7 +26,7 @@ case class RegexTeacher(l: Seq[String]) extends Teacher(l) {
 object Simple{
  
   def main(args: Array[String]) = {
-    val t = new ExampleTeacher(Seq("0","1"))
+    val t = new RegexTeacher("ab*")
     val l = new Learner(t)
     println(l.learn)
   }
