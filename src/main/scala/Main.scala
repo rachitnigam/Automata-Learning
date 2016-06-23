@@ -26,8 +26,9 @@ case class RegexTeacher(reg: String) extends Teacher(Seq("a","b")) {
 object Simple{
  
   def main(args: Array[String]) = {
-    val t = new RegexTeacher("ab*")
-    val l = new Learner(t)
+    val t1 = new RegexTeacher("ab")
+    val t2 = new ExampleTeacher()
+    val l = new Learner(t1)
     println(l.learn)
   }
 

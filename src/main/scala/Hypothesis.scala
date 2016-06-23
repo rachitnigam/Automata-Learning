@@ -24,7 +24,8 @@ class Hypothesis(letters: Seq[String], states: Seq[State], iState: State, fState
       buf += '\n'
     }
     buf ++= s"The initial state is: $iState\n"
-    buf ++= s"The final states are: ${fStates.mkString(",")}"
+    if(fStates.isEmpty) buf ++= "There is no accepting state"
+    else buf ++= s"The final states are: ${fStates.mkString(",")}"
     buf.toString
   }
 

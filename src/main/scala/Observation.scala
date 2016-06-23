@@ -129,9 +129,6 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
     val states = stateMap.values.toSeq
     val iState = stateMap(rowOf(""))
     val fStates = getFStates(stateMap)
-    
-    assert(!fStates.isEmpty, "The set of final states is empty!")
-
     val tFun = genTFun(stateMap)
     new Hypothesis(letters, states, iState, fStates, tFun)
   }
