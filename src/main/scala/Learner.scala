@@ -41,9 +41,7 @@ class Learner(teacher: Teacher) {
       val counter = teacher.isTrueHypothesis(h)
       if(counter.isDefined){
         println(s"This is not the correct, ${counter.get} is the counterexample")
-        //println(s"The old ps: ${nobs.preStrings}")
         val ps: List[String] = (nobs.preStrings union allPreOf(counter.get)).toList
-        //println(s"The new ps: $ps")
         loop(makeObsTable(ps,nobs.sufStrings))
       }
       else{

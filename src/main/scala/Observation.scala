@@ -122,7 +122,6 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
         }
         case _ => set
       }
-      println(s"preStrings: $preStrings")
       iter(preStrings).toSeq
     }
     
@@ -138,19 +137,4 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
   }
 
   override def toString() = generateTable
-}
-
-object Observation {
- // def main(args: Array[String]) = {
- //   def f(s: String) = s matches """ab*"""
- //   def l = Seq("a","b")
- //   def ps = Seq("","a","b","ba")
- //   def ss = Seq("","a")
-
- //   val obs = new ObsTable(l,f,ps,ss)
- //   println(obs)
- //   println(s"Inconsistent: ${obs.findInconsistent}")
- //   println(s"Unclosed: ${obs.findUnclosed}")
- //   println(obs.generateHypothesis)
- // }
 }

@@ -23,7 +23,8 @@ class Hypothesis(letters: Seq[String], states: Seq[State], iState: State, fState
       buf ++= generateTransitionRow(state).mkString(" | ")
       buf += '\n'
     }
-    buf++= s"The final states are: ${fStates.mkString(",")}"
+    buf ++= s"The initial state is: $iState\n"
+    buf ++= s"The final states are: ${fStates.mkString(",")}"
     buf.toString
   }
 
