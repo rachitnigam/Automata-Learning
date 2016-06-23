@@ -80,7 +80,7 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
         else
           iter(tl)
       }
-      case _ => None
+      case Nil => None
     }
     iter(sa)
   }
@@ -120,7 +120,7 @@ case class ObsTable(l: Seq[String], isMember: String => Boolean, ps: Seq[String]
           else
             iter(tl,set)
         }
-        case _ => set
+        case Nil => set
       }
       iter(preStrings).toSeq
     }
